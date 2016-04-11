@@ -1,0 +1,6 @@
+[package]
+name = "linux-stats"
+version = "0.1.0"
+authors = ["nathan <nathanrsizemore@gmail.com>"]
+
+[dependencies]
