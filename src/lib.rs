@@ -8,6 +8,7 @@
 
 #[macro_use]
 extern crate log;
+extern crate rustc_serialize;
 
 
 use std::default::Default;
@@ -16,6 +17,7 @@ use std::io::{self, ErrorKind};
 use std::os::unix::process::ExitStatusExt;
 
 
+#[derive(Clone, RustcDecodable, RustcEncodable)]
 pub struct Stat {
     pub cpu: Vec<u64>,
     pub cpus: Vec<Vec<u64>>,
@@ -28,6 +30,7 @@ pub struct Stat {
     pub softirq: Vec<u64>
 }
 
+#[derive(Clone, RustcDecodable, RustcEncodable)]
 pub struct MemInfo {
     pub mem_total: u64,
     pub mem_free: u64,
