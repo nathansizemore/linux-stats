@@ -6,6 +6,11 @@
 // http://mozilla.org/MPL/2.0/.
 
 
+//! Data structures representative of various [procfs][procfs-url] reports.
+//!
+//! [procfs-url]: https://github.com/torvalds/linux/blob/master/Documentation/filesystems/proc.txt
+
+
 extern crate rustc_serialize;
 
 
@@ -15,6 +20,7 @@ use std::io::{self, ErrorKind};
 use std::os::unix::process::ExitStatusExt;
 
 
+/// Represents the output of `cat /proc/stat`
 #[derive(Clone, RustcDecodable, RustcEncodable)]
 pub struct Stat {
     pub cpu: Vec<u64>,
@@ -28,6 +34,7 @@ pub struct Stat {
     pub softirq: Vec<u64>
 }
 
+/// Represents the output of `cat /proc/meminfo`
 #[derive(Clone, RustcDecodable, RustcEncodable)]
 pub struct MemInfo {
     pub mem_total: u64,
