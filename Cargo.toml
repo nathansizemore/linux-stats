@@ -1,7 +1,12 @@
 [package]
 name = "linux-stats"
 version = "0.1.0"
-authors = ["nathan <nathanrsizemore@gmail.com>"]
+authors = ["Nathan Sizemore <nathanrsizemore@gmail.com>"]
+description = "typesafe procfs info"
+keywords = ["linux", "stat", "meminfo", "cpus"]
+readme = "README.md"
+license = "MPL-2.0"
+repository = "https://github.com/nathansizemore/linux-stats"
 
 [dependencies]
 rustc-serialize = "^0.3"
