@@ -6,8 +6,6 @@
 // http://mozilla.org/MPL/2.0/.
 
 
-#[macro_use]
-extern crate log;
 extern crate rustc_serialize;
 
 
