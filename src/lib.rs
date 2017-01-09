@@ -11,12 +11,19 @@
 
 
 extern crate rustc_serialize;
+#[macro_use] extern crate enum_primitive;
+extern crate num;
+use num::FromPrimitive;
 
 
 use std::default::Default;
 use std::process::Command;
 use std::io::{self, ErrorKind};
 use std::os::unix::process::ExitStatusExt;
+use std::net::Ipv4Addr;
+use std::fs::File;
+use std::io::Read;
+use rustc_serialize::hex::FromHex;
 
 
 /// Represents the output of `cat /proc/stat`
@@ -83,6 +90,46 @@ pub struct MemInfo {
     pub direct_map_2m: u64
 }
 
+
+enum_from_primitive! {
+    /// Represents TCP socket's state.
+    #[derive(Clone, Debug, PartialEq)]
+    pub enum SocketState {
+        Established = 1,
+        SynSent = 2,
+        SynRecv = 3,
+        FinWait1 = 4,
+        FinWait2 = 5,
+        TimeWait = 6,
+        Close = 7,
+        CloseWait = 8,
+        LastAck = 9,
+        Listen = 10,
+        Closing = 11
+    }
+}
+
+/// Represents TCP socket's timer status.
+#[derive(Clone, Debug, PartialEq)]
+pub enum SocketTimerState {
+    // TODO: other timer states, timeout
+    Inactive,
+    Active
+}
+
+/// Represents a line (socket) in output of `cat /proc/net/{tcp,udp}`
+#[derive(Clone)]
+pub struct Socket {
+    pub sl: u64,
+    pub local_address: Ipv4Addr,
+    pub remote_address: Ipv4Addr,
+    pub state: SocketState,
+    pub tx_queue: u64,
+    pub rx_queue: u64,
+    pub timer: SocketTimerState,
+    pub uid: u32,
+    pub inode: u64
+}
 
 pub fn stat() -> io::Result<Stat> {
     let output_result = Command::new("cat")
@@ -443,6 +490,31 @@ pub fn meminfo() -> io::Result<MemInfo> {
     Ok(meminfo)
 }
 
+pub fn tcp() -> io::Result<Vec<Socket>> {
+    net("/proc/net/tcp")
+}
+
+pub fn udp() -> io::Result<Vec<Socket>> {
+    net("/proc/net/udp")
+}
+
+fn read_file(path: &str) -> io::Result<String> {
+    let file = File::open(path);
+    let mut content = String::new();
+
+    file
+        .map(|mut f| f.read_to_string(&mut content))
+        .and(Ok(content))
+}
+
+fn net(file: &str) -> io::Result<Vec<Socket>> {
+    let content = read_file(file);
+    match content {
+        Ok(c) => Ok(c.lines().skip(1).map(to_net_socket).collect()),
+        Err(e) => Err(e)
+    }
+}
+
 fn to_vecu64(line: &str) -> Vec<u64> {
     let mut chunks = line.split_whitespace();
     let mut buf = Vec::<u64>::new();
@@ -464,7 +536,45 @@ fn to_u64(line: &str) -> u64 {
     return chunks.next().unwrap().parse::<u64>().unwrap();
 }
 
+fn to_net_socket(line: &str) -> Socket {
+    let mut chunks = line.split_whitespace();
+    let sl = chunks.next().unwrap().split(':').next().unwrap().parse::<u64>().unwrap();
 
+    // Both local and remote addresses are formatted as <host>:<port> pair, so
+    // split them further.
+    // TODO ports
+    let local : Vec<&str> = chunks.next().unwrap().split(':').collect();
+    let remote : Vec<&str> = chunks.next().unwrap().split(':').collect();
+    let state = chunks.next().unwrap().from_hex().unwrap()[0];
+    let queues : Vec<&str> = chunks.next().unwrap().split(':').collect();
+    let timer : Vec<&str> = chunks.next().unwrap().split(':').collect();
+    // retrnsmt - unused
+    chunks.next().unwrap();
+    let uid = chunks.next().unwrap().parse::<u32>().unwrap();
+    // timeout - unused
+    chunks.next().unwrap();
+    let inode = chunks.next().unwrap().parse::<u64>().unwrap();
+
+    Socket {
+        sl: sl,
+        local_address: to_ipaddr(local[0]),
+        remote_address: to_ipaddr(remote[0]),
+        state: SocketState::from_u8(state).unwrap(),
+        tx_queue: queues[0].parse::<u64>().unwrap(),
+        rx_queue: queues[1].parse::<u64>().unwrap(),
+        timer: match timer[0].parse::<u8>().unwrap() {
+            0 => SocketTimerState::Inactive,
+            _ => SocketTimerState::Active
+        },
+        uid: uid,
+        inode: inode
+    }
+}
+
+fn to_ipaddr(hex: &str) -> Ipv4Addr {
+    let bytes = hex.from_hex().unwrap();
+    Ipv4Addr::from([ bytes[3], bytes[2], bytes[1], bytes[0] ])
+}
 
 impl Default for Stat {
     fn default() -> Stat {
@@ -532,4 +642,23 @@ impl Default for MemInfo {
             direct_map_2m: 0
         }
     }
+}
+
+#[test]
+fn test_to_ipaddr() {
+    let addr = to_ipaddr("0100007F");
+    assert_eq!(addr.octets(), [127, 0, 0, 1]);
+}
+
+#[test]
+fn test_to_net_socket() {
+    let sock = to_net_socket("  49: 0100007F:1111 5B41EE2E:50 0A 00000001:00000002 00:00000000 00000000  1001        0 2796814 1 ffff938ed0741080 20 4 29 10 -1");
+    assert_eq!(sock.local_address.octets(), [127, 0, 0, 1]);
+    assert_eq!(sock.remote_address.octets(), [46, 238, 65, 91]);
+    assert_eq!(sock.state, SocketState::Listen);
+    assert_eq!(sock.tx_queue, 1);
+    assert_eq!(sock.rx_queue, 2);
+    assert_eq!(sock.timer, SocketTimerState::Inactive);
+    assert_eq!(sock.uid, 1001);
+    assert_eq!(sock.inode, 2796814);
 }
