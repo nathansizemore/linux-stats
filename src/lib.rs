@@ -122,7 +122,9 @@ pub enum SocketTimerState {
 pub struct Socket {
     pub sl: u64,
     pub local_address: Ipv4Addr,
+    pub local_port: u16,
     pub remote_address: Ipv4Addr,
+    pub remote_port: u16,
     pub state: SocketState,
     pub tx_queue: u64,
     pub rx_queue: u64,
@@ -542,7 +544,6 @@ fn to_net_socket(line: &str) -> Socket {
 
     // Both local and remote addresses are formatted as <host>:<port> pair, so
     // split them further.
-    // TODO ports
     let local : Vec<&str> = chunks.next().unwrap().split(':').collect();
     let remote : Vec<&str> = chunks.next().unwrap().split(':').collect();
     let state = chunks.next().unwrap().from_hex().unwrap()[0];
@@ -558,7 +559,9 @@ fn to_net_socket(line: &str) -> Socket {
     Socket {
         sl: sl,
         local_address: to_ipaddr(local[0]),
+        local_port: to_port(local[1]),
         remote_address: to_ipaddr(remote[0]),
+        remote_port: to_port(remote[1]),
         state: SocketState::from_u8(state).unwrap(),
         tx_queue: queues[0].parse::<u64>().unwrap(),
         rx_queue: queues[1].parse::<u64>().unwrap(),
@@ -569,6 +572,11 @@ fn to_net_socket(line: &str) -> Socket {
         uid: uid,
         inode: inode
     }
+}
+
+fn to_port(hex: &str) -> u16 {
+    let bytes = hex.from_hex().unwrap();
+    (bytes[0] as u16 * 256) + bytes[1] as u16
 }
 
 fn to_ipaddr(hex: &str) -> Ipv4Addr {
@@ -651,10 +659,17 @@ fn test_to_ipaddr() {
 }
 
 #[test]
+fn test_to_port() {
+    assert_eq!(to_port("0535"), 1333);
+}
+
+#[test]
 fn test_to_net_socket() {
-    let sock = to_net_socket("  49: 0100007F:1111 5B41EE2E:50 0A 00000001:00000002 00:00000000 00000000  1001        0 2796814 1 ffff938ed0741080 20 4 29 10 -1");
+    let sock = to_net_socket("  49: 0100007F:1132 5B41EE2E:0050 0A 00000001:00000002 00:00000000 00000000  1001        0 2796814 1 ffff938ed0741080 20 4 29 10 -1");
     assert_eq!(sock.local_address.octets(), [127, 0, 0, 1]);
+    assert_eq!(sock.local_port, 4402);
     assert_eq!(sock.remote_address.octets(), [46, 238, 65, 91]);
+    assert_eq!(sock.remote_port, 80);
     assert_eq!(sock.state, SocketState::Listen);
     assert_eq!(sock.tx_queue, 1);
     assert_eq!(sock.rx_queue, 2);
