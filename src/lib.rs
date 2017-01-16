@@ -93,7 +93,7 @@ pub struct MemInfo {
 
 enum_from_primitive! {
     /// Represents TCP socket's state.
-    #[derive(Clone, Debug, PartialEq)]
+    #[derive(Clone, Debug, PartialEq, Eq, Hash)]
     pub enum SocketState {
         Established = 1,
         SynSent = 2,
