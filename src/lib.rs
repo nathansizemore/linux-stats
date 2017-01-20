@@ -17,9 +17,7 @@ use num::FromPrimitive;
 
 
 use std::default::Default;
-use std::process::Command;
-use std::io::{self, ErrorKind};
-use std::os::unix::process::ExitStatusExt;
+use std::io;
 use std::net::Ipv4Addr;
 use std::fs::File;
 use std::io::Read;
@@ -134,27 +132,10 @@ pub struct Socket {
 }
 
 pub fn stat() -> io::Result<Stat> {
-    let output_result = Command::new("cat")
-        .arg("/proc/stat")
-        .output();
+    let content = read_file("/proc/stat");
 
-    if output_result.is_err() {
-        let err = output_result.unwrap_err();
-        return Err(err);
-    }
-
-    let output = output_result.unwrap();
-    if !output.status.success() {
-        let code = match output.status.code() {
-            Some(c) => c,
-            None => output.status.signal().unwrap()
-        };
-
-        let stderr = unsafe { String::from_utf8_unchecked(output.stderr) };
-        let err = io::Error::new(ErrorKind::Other, format!("ExitStatus: {}    Stderr: {}",
-                                                           code,
-                                                           stderr));
-        return Err(err);
+    if content.is_err() {
+        return Err(content.unwrap_err());
     }
 
     // > cat /proc/stat
@@ -168,8 +149,8 @@ pub fn stat() -> io::Result<Stat> {
     //     procs_running 1
     //     procs_blocked 0
     //     softirq 183433 0 21755 12 39 1137 231 21459 2263
-    let stdout = unsafe { String::from_utf8_unchecked(output.stdout) };
-    let lines = stdout.lines();
+    let v = content.unwrap();
+    let lines = v.lines();
 
     let mut stat: Stat = Default::default();
     let mut line_num: usize = 0;
@@ -233,27 +214,10 @@ pub fn stat() -> io::Result<Stat> {
 }
 
 pub fn meminfo() -> io::Result<MemInfo> {
-    let output_result = Command::new("cat")
-        .arg("/proc/meminfo")
-        .output();
+    let content = read_file("/proc/meminfo");
 
-    if output_result.is_err() {
-        let err = output_result.unwrap_err();
-        return Err(err);
-    }
-
-    let output = output_result.unwrap();
-    if !output.status.success() {
-        let code = match output.status.code() {
-            Some(c) => c,
-            None => output.status.signal().unwrap()
-        };
-
-        let stderr = unsafe { String::from_utf8_unchecked(output.stderr) };
-        let err = io::Error::new(ErrorKind::Other, format!("ExitStatus: {}    Stderr: {}",
-                                                           code,
-                                                           stderr));
-        return Err(err);
+    if content.is_err() {
+        return Err(content.unwrap_err());
     }
 
     // > cat /proc/meminfo
@@ -302,8 +266,8 @@ pub fn meminfo() -> io::Result<MemInfo> {
     //     Hugepagesize:       2048 kB
     //     DirectMap4k:       67520 kB
     //     DirectMap2M:     3602432 kB
-    let stdout = unsafe { String::from_utf8_unchecked(output.stdout) };
-    let lines = stdout.lines();
+    let v = content.unwrap();
+    let lines = v.lines();
 
     let mut meminfo: MemInfo = Default::default();
     for ref line in lines {
