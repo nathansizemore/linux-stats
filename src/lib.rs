@@ -114,7 +114,7 @@ enum_from_primitive! {
 pub enum SocketTimerState {
     // TODO: other timer states, timeout
     Inactive,
-    Active
+    Active(u64)
 }
 
 /// Represents a line (socket) in output of `cat /proc/net/{tcp,udp}`
@@ -567,7 +567,7 @@ fn to_net_socket(line: &str) -> Socket {
         rx_queue: u64::from_str_radix(queues[1], 16).unwrap(),
         timer: match timer[0].parse::<u8>().unwrap() {
             0 => SocketTimerState::Inactive,
-            _ => SocketTimerState::Active
+            _ => SocketTimerState::Active(u64::from_str_radix(timer[1], 16).unwrap()),
         },
         uid: uid,
         inode: inode
@@ -655,7 +655,7 @@ fn test_to_ipaddr() {
 
 #[test]
 fn test_to_net_socket() {
-    let sock = to_net_socket("  49: 0100007F:1132 5B41EE2E:0050 0A 0000000A:00000002 00:00000000 00000000  1001        0 2796814 1 ffff938ed0741080 20 4 29 10 -1");
+    let sock = to_net_socket("  49: 0100007F:1132 5B41EE2E:0050 0A 0000000A:00000002 01:0000000B 00000000  1001        0 2796814 1 ffff938ed0741080 20 4 29 10 -1");
     assert_eq!(sock.local_address.octets(), [127, 0, 0, 1]);
     assert_eq!(sock.local_port, 4402);
     assert_eq!(sock.remote_address.octets(), [46, 238, 65, 91]);
@@ -663,7 +663,7 @@ fn test_to_net_socket() {
     assert_eq!(sock.state, SocketState::Listen);
     assert_eq!(sock.tx_queue, 0xA);
     assert_eq!(sock.rx_queue, 2);
-    assert_eq!(sock.timer, SocketTimerState::Inactive);
+    assert_eq!(sock.timer, SocketTimerState::Active(0xB));
     assert_eq!(sock.uid, 1001);
     assert_eq!(sock.inode, 2796814);
 }
