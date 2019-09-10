@@ -41,7 +41,7 @@ pub struct Stat {
 }
 
 /// Represents the output of `cat /proc/meminfo`
-#[derive(Clone, RustcDecodable, RustcEncodable)]
+#[derive(Debug, PartialEq, Clone, RustcDecodable, RustcEncodable)]
 pub struct MemInfo {
     pub mem_total: u64,
     pub mem_free: u64,
@@ -95,52 +95,6 @@ impl FromStr for MemInfo {
 
     fn from_str(s: &str) -> Result<MemInfo, Infallible> {
 
-        // > cat /proc/meminfo
-        //     MemTotal:        3521920 kB
-        //     MemFree:         1878240 kB
-        //     MemAvailable:    2275916 kB
-        //     Buffers:           35428 kB
-        //     Cached:           386132 kB
-        //     SwapCached:            0 kB
-        //     Active:          1229080 kB
-        //     Inactive:         284000 kB
-        //     Active(anon):    1094728 kB
-        //     Inactive(anon):    17664 kB
-        //     Active(file):     134352 kB
-        //     Inactive(file):   266336 kB
-        //     Unevictable:        3660 kB
-        //     Mlocked:            3660 kB
-        //     SwapTotal:             0 kB
-        //     SwapFree:              0 kB
-        //     Dirty:                12 kB
-        //     Writeback:             0 kB
-        //     AnonPages:       1095172 kB
-        //     Mapped:            71384 kB
-        //     Shmem:             18456 kB
-        //     Slab:              50800 kB
-        //     SReclaimable:      24684 kB
-        //     SUnreclaim:        26116 kB
-        //     KernelStack:        5584 kB
-        //     PageTables:         6184 kB
-        //     NFS_Unstable:          0 kB
-        //     Bounce:                0 kB
-        //     WritebackTmp:          0 kB
-        //     CommitLimit:     1760960 kB
-        //     Committed_AS:    2064016 kB
-        //     VmallocTotal:   34359738367 kB
-        //     VmallocUsed:           0 kB
-        //     VmallocChunk:          0 kB
-        //     HardwareCorrupted:     0 kB
-        //     AnonHugePages:   1013760 kB
-        //     CmaTotal:              0 kB
-        //     CmaFree:               0 kB
-        //     HugePages_Total:       0
-        //     HugePages_Free:        0
-        //     HugePages_Rsvd:        0
-        //     HugePages_Surp:        0
-        //     Hugepagesize:       2048 kB
-        //     DirectMap4k:       67520 kB
-        //     DirectMap2M:     3602432 kB
         let mut meminfo: MemInfo = Default::default();
 
         for line in s.lines() {
