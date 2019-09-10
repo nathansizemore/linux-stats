@@ -40,6 +40,84 @@ pub struct Stat {
     pub softirq: Vec<u64>
 }
 
+impl FromStr for Stat {
+    type Err = Infallible;
+
+    fn from_str(s: &str) -> Result<Stat, Infallible> {
+
+        // > cat /proc/stat
+        //     cpu  2255 34 2290 22625563 6290 127 456 0 0 0
+        //     cpu0 1132 34 1441 11311718 3675 127 438 0 0 0
+        //     cpu1 1123 0 849 11313845 2614 0 18 0 0 0
+        //     intr 114930548 113199788 3 0 5 263 0 4 [... lots more numbers ...]
+        //     ctxt 1990473
+        //     btime 1062191376
+        //     processes 2915
+        //     procs_running 1
+        //     procs_blocked 0
+        //     softirq 183433 0 21755 12 39 1137 231 21459 2263
+        let mut stat: Stat = Default::default();
+        let mut line_num: usize = 0;
+        for ref line in s.lines() {
+
+            if line_num == 0 {
+                stat.cpu = to_vecu64(line);
+            }
+
+            if line.contains("cpu") && line_num > 0 {
+                stat.cpus.push(to_vecu64(line));
+            }
+
+            if line.contains("intr") {
+                stat.intr = to_vecu64(line);
+            }
+
+            if line.contains("ctxt") {
+                let mut chunks = line.split_whitespace();
+                chunks.next();
+
+                stat.ctxt = chunks.next().unwrap().parse::<u64>().unwrap();
+            }
+
+            if line.contains("btime") {
+                let mut chunks = line.split_whitespace();
+                chunks.next();
+
+                stat.btime = chunks.next().unwrap().parse::<u32>().unwrap();
+            }
+
+            if line.contains("processes") {
+                let mut chunks = line.split_whitespace();
+                chunks.next();
+
+                stat.processes = chunks.next().unwrap().parse::<u32>().unwrap();
+            }
+
+            if line.contains("procs_running") {
+                let mut chunks = line.split_whitespace();
+                chunks.next();
+
+                stat.procs_running = chunks.next().unwrap().parse::<u32>().unwrap();
+            }
+
+            if line.contains("procs_blocked") {
+                let mut chunks = line.split_whitespace();
+                chunks.next();
+
+                stat.procs_blocked = chunks.next().unwrap().parse::<u32>().unwrap();
+            }
+
+            if line.contains("softirq") {
+                stat.softirq = to_vecu64(line);
+            }
+
+            line_num += 1;
+        }
+
+        Ok(stat)
+    }
+}
+
 /// Represents the output of `cat /proc/meminfo`
 #[derive(Debug, PartialEq, Clone, RustcDecodable, RustcEncodable)]
 pub struct MemInfo {
@@ -327,85 +405,9 @@ pub struct Socket {
 }
 
 pub fn stat() -> io::Result<Stat> {
-    let content = read_file("/proc/stat");
-
-    if content.is_err() {
-        return Err(content.unwrap_err());
-    }
-
-    // > cat /proc/stat
-    //     cpu  2255 34 2290 22625563 6290 127 456 0 0 0
-    //     cpu0 1132 34 1441 11311718 3675 127 438 0 0 0
-    //     cpu1 1123 0 849 11313845 2614 0 18 0 0 0
-    //     intr 114930548 113199788 3 0 5 263 0 4 [... lots more numbers ...]
-    //     ctxt 1990473
-    //     btime 1062191376
-    //     processes 2915
-    //     procs_running 1
-    //     procs_blocked 0
-    //     softirq 183433 0 21755 12 39 1137 231 21459 2263
-    let v = content.unwrap();
-    let lines = v.lines();
-
-    let mut stat: Stat = Default::default();
-    let mut line_num: usize = 0;
-    for ref line in lines {
-
-        if line_num == 0 {
-            stat.cpu = to_vecu64(line);
-        }
-
-        if line.contains("cpu") && line_num > 0 {
-            stat.cpus.push(to_vecu64(line));
-        }
-
-        if line.contains("intr") {
-            stat.intr = to_vecu64(line);
-        }
-
-        if line.contains("ctxt") {
-            let mut chunks = line.split_whitespace();
-            chunks.next();
-
-            stat.ctxt = chunks.next().unwrap().parse::<u64>().unwrap();
-        }
-
-        if line.contains("btime") {
-            let mut chunks = line.split_whitespace();
-            chunks.next();
-
-            stat.btime = chunks.next().unwrap().parse::<u32>().unwrap();
-        }
-
-        if line.contains("processes") {
-            let mut chunks = line.split_whitespace();
-            chunks.next();
-
-            stat.processes = chunks.next().unwrap().parse::<u32>().unwrap();
-        }
-
-        if line.contains("procs_running") {
-            let mut chunks = line.split_whitespace();
-            chunks.next();
-
-            stat.procs_running = chunks.next().unwrap().parse::<u32>().unwrap();
-        }
-
-        if line.contains("procs_blocked") {
-            let mut chunks = line.split_whitespace();
-            chunks.next();
-
-            stat.procs_blocked = chunks.next().unwrap().parse::<u32>().unwrap();
-        }
-
-        if line.contains("softirq") {
-            stat.softirq = to_vecu64(line);
-        }
-
-        line_num += 1;
-    }
-
-    return Ok(stat);
+    read_file("/proc/stat")?
+        .parse()
+        .map_err(|_| panic!("Infallible result occured"))
 }
 
 pub fn meminfo() -> io::Result<MemInfo> {
