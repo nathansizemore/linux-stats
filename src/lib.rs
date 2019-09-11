@@ -4,27 +4,24 @@
 // If a copy of the MPL was not distributed with this file, You can obtain one at
 // http://mozilla.org/MPL/2.0/.
 
-
 //! Data structures representative of various [procfs][procfs-url] reports.
 //!
 //! [procfs-url]: https://github.com/torvalds/linux/blob/master/Documentation/filesystems/proc.txt
 
-
 extern crate rustc_serialize;
-#[macro_use] extern crate enum_primitive;
+#[macro_use]
+extern crate enum_primitive;
 extern crate num;
 use num::FromPrimitive;
 
-
-use std::default::Default;
-use std::io;
-use std::net::Ipv4Addr;
-use std::fs::File;
-use std::io::Read;
-use std::convert::Infallible;
-use std::str::FromStr;
 use rustc_serialize::hex::FromHex;
-
+use std::convert::Infallible;
+use std::default::Default;
+use std::fs::File;
+use std::io;
+use std::io::Read;
+use std::net::Ipv4Addr;
+use std::str::FromStr;
 
 /// Represents the output of `cat /proc/stat`
 #[derive(Debug, PartialEq, Clone, RustcDecodable, RustcEncodable)]
@@ -37,18 +34,16 @@ pub struct Stat {
     pub processes: u32,
     pub procs_running: u32,
     pub procs_blocked: u32,
-    pub softirq: Vec<u64>
+    pub softirq: Vec<u64>,
 }
 
 impl FromStr for Stat {
     type Err = Infallible;
 
     fn from_str(s: &str) -> Result<Stat, Infallible> {
-
         let mut stat: Stat = Default::default();
         let mut line_num: usize = 0;
         for ref line in s.lines() {
-
             if line_num == 0 {
                 stat.cpu = to_vecu64(line);
             }
@@ -154,18 +149,16 @@ pub struct MemInfo {
     pub huge_pages_surp: u64,
     pub hugepagesize: u64,
     pub direct_map_4k: u64,
-    pub direct_map_2m: u64
+    pub direct_map_2m: u64,
 }
 
 impl FromStr for MemInfo {
     type Err = Infallible;
 
     fn from_str(s: &str) -> Result<MemInfo, Infallible> {
-
         let mut meminfo: MemInfo = Default::default();
 
         for line in s.lines() {
-
             if line.contains("MemTotal") {
                 meminfo.mem_total = to_u64(line);
             }
@@ -374,7 +367,7 @@ enum_from_primitive! {
 pub enum SocketTimerState {
     // TODO: other timer states, timeout
     Inactive,
-    Active(u64)
+    Active(u64),
 }
 
 /// Represents a line (socket) in output of `cat /proc/net/{tcp,udp}`
@@ -390,7 +383,7 @@ pub struct Socket {
     pub rx_queue: u64,
     pub timer: SocketTimerState,
     pub uid: u32,
-    pub inode: u64
+    pub inode: u64,
 }
 
 pub fn stat() -> io::Result<Stat> {
@@ -417,8 +410,7 @@ fn read_file(path: &str) -> io::Result<String> {
     let file = File::open(path);
     let mut content = String::new();
 
-    file
-        .map(|mut f| f.read_to_string(&mut content))
+    file.map(|mut f| f.read_to_string(&mut content))
         .and(Ok(content))
 }
 
@@ -426,7 +418,7 @@ fn net(file: &str) -> io::Result<Vec<Socket>> {
     let content = read_file(file);
     match content {
         Ok(c) => Ok(c.lines().skip(1).map(to_net_socket).collect()),
-        Err(e) => Err(e)
+        Err(e) => Err(e),
     }
 }
 
@@ -453,15 +445,22 @@ fn to_u64(line: &str) -> u64 {
 
 fn to_net_socket(line: &str) -> Socket {
     let mut chunks = line.split_whitespace();
-    let sl = chunks.next().unwrap().split(':').next().unwrap().parse::<u64>().unwrap();
+    let sl = chunks
+        .next()
+        .unwrap()
+        .split(':')
+        .next()
+        .unwrap()
+        .parse::<u64>()
+        .unwrap();
 
     // Both local and remote addresses are formatted as <host>:<port> pair, so
     // split them further.
-    let local : Vec<&str> = chunks.next().unwrap().split(':').collect();
-    let remote : Vec<&str> = chunks.next().unwrap().split(':').collect();
+    let local: Vec<&str> = chunks.next().unwrap().split(':').collect();
+    let remote: Vec<&str> = chunks.next().unwrap().split(':').collect();
     let state = chunks.next().unwrap().from_hex().unwrap()[0];
-    let queues : Vec<&str> = chunks.next().unwrap().split(':').collect();
-    let timer : Vec<&str> = chunks.next().unwrap().split(':').collect();
+    let queues: Vec<&str> = chunks.next().unwrap().split(':').collect();
+    let timer: Vec<&str> = chunks.next().unwrap().split(':').collect();
     // retrnsmt - unused
     chunks.next().unwrap();
     let uid = chunks.next().unwrap().parse::<u32>().unwrap();
@@ -483,13 +482,13 @@ fn to_net_socket(line: &str) -> Socket {
             _ => SocketTimerState::Active(u64::from_str_radix(timer[1], 16).unwrap()),
         },
         uid: uid,
-        inode: inode
+        inode: inode,
     }
 }
 
 fn to_ipaddr(hex: &str) -> Ipv4Addr {
     let bytes = hex.from_hex().unwrap();
-    Ipv4Addr::from([ bytes[3], bytes[2], bytes[1], bytes[0] ])
+    Ipv4Addr::from([bytes[3], bytes[2], bytes[1], bytes[0]])
 }
 
 impl Default for Stat {
@@ -503,7 +502,7 @@ impl Default for Stat {
             processes: 0,
             procs_running: 0,
             procs_blocked: 0,
-            softirq: Vec::new()
+            softirq: Vec::new(),
         }
     }
 }
@@ -555,7 +554,7 @@ impl Default for MemInfo {
             huge_pages_surp: 0,
             hugepagesize: 0,
             direct_map_4k: 0,
-            direct_map_2m: 0
+            direct_map_2m: 0,
         }
     }
 }
