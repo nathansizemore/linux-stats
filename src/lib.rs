@@ -48,50 +48,50 @@ impl FromStr for Stat {
                 stat.cpu = to_vecu64(line);
             }
 
-            if line.contains("cpu") && line_num > 0 {
+            if line.starts_with("cpu") && line_num > 0 {
                 stat.cpus.push(to_vecu64(line));
             }
 
-            if line.contains("intr") {
+            if line.starts_with("intr") {
                 stat.intr = to_vecu64(line);
             }
 
-            if line.contains("ctxt") {
+            if line.starts_with("ctxt") {
                 let mut chunks = line.split_whitespace();
                 chunks.next();
 
                 stat.ctxt = chunks.next().unwrap().parse::<u64>().unwrap();
             }
 
-            if line.contains("btime") {
+            if line.starts_with("btime") {
                 let mut chunks = line.split_whitespace();
                 chunks.next();
 
                 stat.btime = chunks.next().unwrap().parse::<u32>().unwrap();
             }
 
-            if line.contains("processes") {
+            if line.starts_with("processes") {
                 let mut chunks = line.split_whitespace();
                 chunks.next();
 
                 stat.processes = chunks.next().unwrap().parse::<u32>().unwrap();
             }
 
-            if line.contains("procs_running") {
+            if line.starts_with("procs_running") {
                 let mut chunks = line.split_whitespace();
                 chunks.next();
 
                 stat.procs_running = chunks.next().unwrap().parse::<u32>().unwrap();
             }
 
-            if line.contains("procs_blocked") {
+            if line.starts_with("procs_blocked") {
                 let mut chunks = line.split_whitespace();
                 chunks.next();
 
                 stat.procs_blocked = chunks.next().unwrap().parse::<u32>().unwrap();
             }
 
-            if line.contains("softirq") {
+            if line.starts_with("softirq") {
                 stat.softirq = to_vecu64(line);
             }
 
@@ -159,183 +159,183 @@ impl FromStr for MemInfo {
         let mut meminfo: MemInfo = Default::default();
 
         for line in s.lines() {
-            if line.contains("MemTotal") {
+            if line.starts_with("MemTotal") {
                 meminfo.mem_total = to_u64(line);
             }
 
-            if line.contains("MemFree") {
+            if line.starts_with("MemFree") {
                 meminfo.mem_free = to_u64(line);
             }
 
-            if line.contains("MemAvailable") {
+            if line.starts_with("MemAvailable") {
                 meminfo.mem_available = to_u64(line);
             }
 
-            if line.contains("Buffers") {
+            if line.starts_with("Buffers") {
                 meminfo.bufers = to_u64(line);
             }
 
-            if line.contains("Cached") {
+            if line.starts_with("Cached") {
                 meminfo.cached = to_u64(line);
             }
 
-            if line.contains("SwapCached") {
+            if line.starts_with("SwapCached") {
                 meminfo.swap_cached = to_u64(line);
             }
 
-            if line.contains("Active") {
+            if line.starts_with("Active") {
                 meminfo.active = to_u64(line);
             }
 
-            if line.contains("Inactive") {
+            if line.starts_with("Inactive") {
                 meminfo.inactive = to_u64(line);
             }
 
-            if line.contains("Active(anon)") {
+            if line.starts_with("Active(anon)") {
                 meminfo.active_anon = to_u64(line);
             }
 
-            if line.contains("Inactive(anon)") {
+            if line.starts_with("Inactive(anon)") {
                 meminfo.inactive_anon = to_u64(line);
             }
 
-            if line.contains("Active(file)") {
+            if line.starts_with("Active(file)") {
                 meminfo.active_file = to_u64(line);
             }
 
-            if line.contains("Inactive(file)") {
+            if line.starts_with("Inactive(file)") {
                 meminfo.inactive_file = to_u64(line);
             }
 
-            if line.contains("Unevictable") {
+            if line.starts_with("Unevictable") {
                 meminfo.unevictable = to_u64(line);
             }
 
-            if line.contains("Mlocked") {
+            if line.starts_with("Mlocked") {
                 meminfo.mlocked = to_u64(line);
             }
 
-            if line.contains("SwapTotal") {
+            if line.starts_with("SwapTotal") {
                 meminfo.swap_total = to_u64(line);
             }
 
-            if line.contains("SwapFree") {
+            if line.starts_with("SwapFree") {
                 meminfo.swap_free = to_u64(line);
             }
 
-            if line.contains("Dirty") {
+            if line.starts_with("Dirty") {
                 meminfo.dirty = to_u64(line);
             }
 
-            if line.contains("Writeback") {
+            if line.starts_with("Writeback") {
                 meminfo.writeback = to_u64(line);
             }
 
-            if line.contains("AnonPages") {
+            if line.starts_with("AnonPages") {
                 meminfo.anon_pages = to_u64(line);
             }
 
-            if line.contains("Mapped") {
+            if line.starts_with("Mapped") {
                 meminfo.mapped = to_u64(line);
             }
 
-            if line.contains("Shmem") {
+            if line.starts_with("Shmem") {
                 meminfo.shmem = to_u64(line);
             }
 
-            if line.contains("Slab") {
+            if line.starts_with("Slab") {
                 meminfo.slab = to_u64(line);
             }
 
-            if line.contains("SReclaimable") {
+            if line.starts_with("SReclaimable") {
                 meminfo.s_reclaimable = to_u64(line);
             }
 
-            if line.contains("SUnreclaim") {
+            if line.starts_with("SUnreclaim") {
                 meminfo.s_unreclaim = to_u64(line);
             }
 
-            if line.contains("KernelStack") {
+            if line.starts_with("KernelStack") {
                 meminfo.kernel_stack = to_u64(line);
             }
 
-            if line.contains("PageTables") {
+            if line.starts_with("PageTables") {
                 meminfo.page_tables = to_u64(line);
             }
 
-            if line.contains("NFS_Unstable") {
+            if line.starts_with("NFS_Unstable") {
                 meminfo.nfs_unstable = to_u64(line);
             }
 
-            if line.contains("Bounce") {
+            if line.starts_with("Bounce") {
                 meminfo.bounce = to_u64(line);
             }
 
-            if line.contains("WritebackTmp") {
+            if line.starts_with("WritebackTmp") {
                 meminfo.writeback_tmp = to_u64(line);
             }
 
-            if line.contains("CommitLimit") {
+            if line.starts_with("CommitLimit") {
                 meminfo.commit_limit = to_u64(line);
             }
 
-            if line.contains("Committed_AS") {
+            if line.starts_with("Committed_AS") {
                 meminfo.committed_as = to_u64(line);
             }
 
-            if line.contains("VmallocTotal") {
+            if line.starts_with("VmallocTotal") {
                 meminfo.vmalloc_total = to_u64(line);
             }
 
-            if line.contains("VmallocUsed") {
+            if line.starts_with("VmallocUsed") {
                 meminfo.vmalloc_used = to_u64(line);
             }
 
-            if line.contains("VmallocChunk") {
+            if line.starts_with("VmallocChunk") {
                 meminfo.vmalloc_chunk = to_u64(line);
             }
 
-            if line.contains("HardwareCorrupted") {
+            if line.starts_with("HardwareCorrupted") {
                 meminfo.hardware_corrupted = to_u64(line);
             }
 
-            if line.contains("AnonHugePages") {
+            if line.starts_with("AnonHugePages") {
                 meminfo.anon_huge_pages = to_u64(line);
             }
 
-            if line.contains("CmaTotal") {
+            if line.starts_with("CmaTotal") {
                 meminfo.cma_total = to_u64(line);
             }
 
-            if line.contains("CmaFree") {
+            if line.starts_with("CmaFree") {
                 meminfo.cma_free = to_u64(line);
             }
 
-            if line.contains("HugePages_Total") {
+            if line.starts_with("HugePages_Total") {
                 meminfo.huge_pages_total = to_u64(line);
             }
 
-            if line.contains("HugePages_Free") {
+            if line.starts_with("HugePages_Free") {
                 meminfo.huge_pages_free = to_u64(line);
             }
 
-            if line.contains("HugePages_Rsvd") {
+            if line.starts_with("HugePages_Rsvd") {
                 meminfo.huge_pages_rsvd = to_u64(line);
             }
 
-            if line.contains("HugePages_Surp") {
+            if line.starts_with("HugePages_Surp") {
                 meminfo.huge_pages_surp = to_u64(line);
             }
 
-            if line.contains("Hugepagesize") {
+            if line.starts_with("Hugepagesize") {
                 meminfo.hugepagesize = to_u64(line);
             }
 
-            if line.contains("DirectMap4k") {
+            if line.starts_with("DirectMap4k") {
                 meminfo.direct_map_4k = to_u64(line);
             }
 
-            if line.contains("DirectMap2M") {
+            if line.starts_with("DirectMap2M") {
                 meminfo.direct_map_2m = to_u64(line);
             }
         }
