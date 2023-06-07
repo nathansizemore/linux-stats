@@ -8,13 +8,14 @@
 //!
 //! [procfs-url]: https://github.com/torvalds/linux/blob/master/Documentation/filesystems/proc.txt
 
-extern crate rustc_serialize;
 #[macro_use]
 extern crate enum_primitive;
+extern crate hex;
 extern crate num;
+
+use hex::FromHex;
 use num::FromPrimitive;
 
-use rustc_serialize::hex::FromHex;
 use std::convert::Infallible;
 use std::default::Default;
 use std::fs::File;
@@ -24,7 +25,7 @@ use std::net::Ipv4Addr;
 use std::str::FromStr;
 
 /// Represents the output of `cat /proc/stat`
-#[derive(Debug, PartialEq, Clone, RustcDecodable, RustcEncodable)]
+#[derive(Debug, PartialEq, Clone, Default)]
 pub struct Stat {
     pub cpu: Vec<u64>,
     pub cpus: Vec<Vec<u64>>,
@@ -42,8 +43,7 @@ impl FromStr for Stat {
 
     fn from_str(s: &str) -> Result<Stat, Infallible> {
         let mut stat: Stat = Default::default();
-        let mut line_num: usize = 0;
-        for ref line in s.lines() {
+        for (line_num, line) in s.lines().enumerate() {
             if line_num == 0 {
                 stat.cpu = to_vecu64(line);
             }
@@ -94,8 +94,6 @@ impl FromStr for Stat {
             if line.starts_with("softirq") {
                 stat.softirq = to_vecu64(line);
             }
-
-            line_num += 1;
         }
 
         Ok(stat)
@@ -103,7 +101,7 @@ impl FromStr for Stat {
 }
 
 /// Represents the output of `cat /proc/meminfo`
-#[derive(Debug, PartialEq, Clone, RustcDecodable, RustcEncodable)]
+#[derive(Debug, PartialEq, Clone, Default)]
 pub struct MemInfo {
     pub mem_total: u64,
     pub mem_free: u64,
@@ -429,18 +427,18 @@ fn to_vecu64(line: &str) -> Vec<u64> {
     // First chunk is always a non-number, descriptive text.
     chunks.next();
 
-    while let Some(chunk) = chunks.next() {
+    for chunk in chunks {
         buf.push(chunk.parse::<u64>().unwrap());
     }
 
-    return buf;
+    buf
 }
 
 fn to_u64(line: &str) -> u64 {
     let mut chunks = line.split_whitespace();
     chunks.next();
 
-    return chunks.next().unwrap().parse::<u64>().unwrap();
+    chunks.next().unwrap().parse::<u64>().unwrap()
 }
 
 fn to_net_socket(line: &str) -> Socket {
@@ -458,7 +456,7 @@ fn to_net_socket(line: &str) -> Socket {
     // split them further.
     let local: Vec<&str> = chunks.next().unwrap().split(':').collect();
     let remote: Vec<&str> = chunks.next().unwrap().split(':').collect();
-    let state = chunks.next().unwrap().from_hex().unwrap()[0];
+    let state = Vec::<u8>::from_hex(chunks.next().unwrap()).unwrap()[0];
     let queues: Vec<&str> = chunks.next().unwrap().split(':').collect();
     let timer: Vec<&str> = chunks.next().unwrap().split(':').collect();
     // retrnsmt - unused
@@ -469,7 +467,7 @@ fn to_net_socket(line: &str) -> Socket {
     let inode = chunks.next().unwrap().parse::<u64>().unwrap();
 
     Socket {
-        sl: sl,
+        sl,
         local_address: to_ipaddr(local[0]),
         local_port: u16::from_str_radix(local[1], 16).unwrap(),
         remote_address: to_ipaddr(remote[0]),
@@ -481,82 +479,14 @@ fn to_net_socket(line: &str) -> Socket {
             0 => SocketTimerState::Inactive,
             _ => SocketTimerState::Active(u64::from_str_radix(timer[1], 16).unwrap()),
         },
-        uid: uid,
-        inode: inode,
+        uid,
+        inode,
     }
 }
 
 fn to_ipaddr(hex: &str) -> Ipv4Addr {
-    let bytes = hex.from_hex().unwrap();
+    let bytes = Vec::<u8>::from_hex(hex).unwrap();
     Ipv4Addr::from([bytes[3], bytes[2], bytes[1], bytes[0]])
-}
-
-impl Default for Stat {
-    fn default() -> Stat {
-        Stat {
-            cpu: Vec::new(),
-            cpus: Vec::new(),
-            intr: Vec::new(),
-            ctxt: 0,
-            btime: 0,
-            processes: 0,
-            procs_running: 0,
-            procs_blocked: 0,
-            softirq: Vec::new(),
-        }
-    }
-}
-
-impl Default for MemInfo {
-    fn default() -> MemInfo {
-        MemInfo {
-            mem_total: 0,
-            mem_free: 0,
-            mem_available: 0,
-            bufers: 0,
-            cached: 0,
-            swap_cached: 0,
-            active: 0,
-            inactive: 0,
-            active_anon: 0,
-            inactive_anon: 0,
-            active_file: 0,
-            inactive_file: 0,
-            unevictable: 0,
-            mlocked: 0,
-            swap_total: 0,
-            swap_free: 0,
-            dirty: 0,
-            writeback: 0,
-            anon_pages: 0,
-            mapped: 0,
-            shmem: 0,
-            slab: 0,
-            s_reclaimable: 0,
-            s_unreclaim: 0,
-            kernel_stack: 0,
-            page_tables: 0,
-            nfs_unstable: 0,
-            bounce: 0,
-            writeback_tmp: 0,
-            commit_limit: 0,
-            committed_as: 0,
-            vmalloc_total: 0,
-            vmalloc_used: 0,
-            vmalloc_chunk: 0,
-            hardware_corrupted: 0,
-            anon_huge_pages: 0,
-            cma_total: 0,
-            cma_free: 0,
-            huge_pages_total: 0,
-            huge_pages_free: 0,
-            huge_pages_rsvd: 0,
-            huge_pages_surp: 0,
-            hugepagesize: 0,
-            direct_map_4k: 0,
-            direct_map_2m: 0,
-        }
-    }
 }
 
 #[test]

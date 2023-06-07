@@ -98,8 +98,8 @@ const MEMINFO_2: MemInfo = MemInfo {
     direct_map_2m: 8062976,
 };
 
-const MEMINFO_1_RAW: &'static str = include_str!("./meminfo-1");
-const MEMINFO_2_RAW: &'static str = include_str!("./meminfo-2");
+const MEMINFO_1_RAW: &str = include_str!("./meminfo-1");
+const MEMINFO_2_RAW: &str = include_str!("./meminfo-2");
 
 #[test]
 fn meminfo_empty() {
