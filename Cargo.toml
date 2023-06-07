@@ -1,6 +1,6 @@
 [package]
 name = "linux-stats"
-version = "0.3.1"
+version = "0.3.2"
 authors = ["Nathan Sizemore <nathanrsizemore@gmail.com>"]
 description = "typesafe procfs info"
 keywords = ["linux", "stat", "meminfo", "cpus"]
